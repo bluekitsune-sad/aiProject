@@ -54,10 +54,8 @@ The Bus Management System is designed to streamline university transportation ma
    ```
 
 2. Install the required packages:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
+   
+   after runing the run.py all the required dependency will be downloaded
 
 3. Set up the environment variables for MongoDB connection.
 

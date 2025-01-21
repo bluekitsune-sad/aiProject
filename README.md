@@ -16,6 +16,10 @@ Email: Amna.g24949@iqra.edu.pk
 
 A comprehensive web-based application for managing university bus routes, drivers, and students. The system features an interactive map interface for route visualization and real-time tracking, making it easier for administrators to manage transportation and for students to track their bus schedules.
 
+## Project Video Representation:
+   ![Video Link](https://drive.google.com/file/d/1fvCIp7OuW0OD-d5U29HpvvEX0SVDXmi6/view?usp=sharing)
+
+
 ## Project Introduction
 
 The Bus Management System is designed to streamline university transportation management by providing:

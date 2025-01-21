@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: white;
+        height: 100vh;
+      }
+
+      .navbar {
+        background: #075c94;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+      }
+
+      .navbar h1 {
+        font-size: 24px;
+      }
+
+      .navbar button {
+        background: #d63031;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .navbar button:hover {
+        background: #c0392b;
+      }
+
+      .tabs {
+        display: flex;
+        justify-content: space-around;
+        background: #3072b4;
+        padding: 10px 0;
+        color: white;
+      }
+
+      .tabs button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 10px 15px;
+      }
+
+      .tabs button.active {
+        background: #075c94;
+        border-radius: 4px;
+      }
+
+      .tabs button:hover {
+        background: #058ae2;
+        border-radius: 4px;
+      }
+
+      .content {
+        padding: 20px;
+        background: #d4d4d4;
+        margin: 10px auto;
+        width: 80%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .table th,
+      .table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .table th {
+        background: #075c94;
+        color: white;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      .form-group button {
+        background: #075c94;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .form-group button:hover {
+        background: #058ae2;
+      }
+
+      .fee-status {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      .fee-status option[value="paid"] {
+        background-color: #4caf50;
+        color: white;
+      }
+
+      .fee-status option[value="unpaid"] {
+        background-color: #f44336;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>Admin Dashboard</h1>
+      <button id="logout">Logout</button>
+    </div>
+
+    <div class="tabs">
+      <button class="active" id="manage-students-tab">Manage Students</button>
+      <button id="manage-drivers-tab">Manage Drivers</button>
+    </div>
+
+    <div id="manage-students-content" class="content">
+      <h2>Manage Students</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Courses Enrolled</th>
+            <th>Fee Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Students will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <div id="manage-drivers-content" class="content" style="display: none">
+      <h2>Manage Drivers</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Available Seats</th>
+            <th>Total Seats</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Drivers will be dynamically added here -->
+        </tbody>
+      </table>
+
+      <div class="form-container">
+        <h3>Assign Route to Driver</h3>
+        <form id="route-form">
+          <div class="form-group">
+            <label>Driver:</label>
+            <select id="driver-select" required>
+              <!-- Will be populated with drivers -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stops (one per line):</label>
+            <textarea id="stops" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Timings (one per line):</label>
+            <textarea id="timings" required></textarea>
+          </div>
+          <button type="submit">Assign Route</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const manageStudentsTab = document.getElementById("manage-students-tab");
+      const manageDriversTab = document.getElementById("manage-drivers-tab");
+      const manageStudentsContent = document.getElementById(
+        "manage-students-content"
+      );
+      const manageDriversContent = document.getElementById(
+        "manage-drivers-content"
+      );
+
+      manageStudentsTab.addEventListener("click", () => {
+        manageStudentsTab.classList.add("active");
+        manageDriversTab.classList.remove("active");
+        manageStudentsContent.style.display = "block";
+        manageDriversContent.style.display = "none";
+      });
+
+      manageDriversTab.addEventListener("click", () => {
+        manageDriversTab.classList.add("active");
+        manageStudentsTab.classList.remove("active");
+        manageDriversContent.style.display = "block";
+        manageStudentsContent.style.display = "none";
+      });
+
+      document.getElementById("logout").addEventListener("click", () => {
+        alert("Logged out successfully!");
+        window.location.href = "login.html";
+      });
+
+      document.querySelectorAll(".edit").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const row = e.target.closest("tr");
+          const cells = row.querySelectorAll("td");
+          const name = prompt("Edit Name:", cells[1].innerText);
+          const email = prompt("Edit Email:", cells[2].innerText);
+          const phone = prompt("Edit Phone:", cells[3].innerText);
+
+          if (name) cells[1].innerText = name;
+          if (email) cells[2].innerText = email;
+          if (phone) cells[3].innerText = phone;
+        });
+      });
+
+      document.querySelectorAll(".delete").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const row = e.target.closest("tr");
+          if (confirm("Are you sure you want to delete this entry?")) {
+            row.remove();
+          }
+        });
+      });
+
+      async function loadUsers() {
+        try {
+          const response = await fetch("http://localhost:5000/admin/users");
+          const data = await response.json();
+
+          const studentTableBody = document.querySelector(
+            "#manage-students-content tbody"
+          );
+          const driverTableBody = document.querySelector(
+            "#manage-drivers-content tbody"
+          );
+
+          studentTableBody.innerHTML = "";
+          driverTableBody.innerHTML = "";
+
+          data.users.forEach((user) => {
+            if (user.role === "student") {
+              const row = `
+                <tr>
+                  <td>${user._id}</td>
+                  <td>${user.username}</td>
+                  <td>${user.email || "N/A"}</td>
+                  <td>${user.phone || "N/A"}</td>
+                  <td>${user.classes ? user.classes.length : 0}</td>
+                  <td>
+                    <select class="fee-status" data-id="${
+                      user._id
+                    }" onchange="updateFeeStatus('${user._id}', this.value)">
+                      <option value="paid" ${
+                        user.fee_status === "paid" ? "selected" : ""
+                      }>Paid</option>
+                      <option value="unpaid" ${
+                        user.fee_status === "unpaid" ? "selected" : ""
+                      }>Unpaid</option>
+                    </select>
+                  </td>
+                  <td>
+                    <button class="edit" data-id="${user._id}">Edit</button>
+                    <button class="delete" data-id="${user._id}">Delete</button>
+                  </td>
+                </tr>`;
+              studentTableBody.innerHTML += row;
+            } else if (user.role === "driver") {
+              const row = `
+                <tr>
+                  <td>${user._id}</td>
+                  <td>${user.username}</td>
+                  <td>${user.email || "N/A"}</td>
+                  <td>${user.phone || "N/A"}</td>
+                  <td>${user.available_seats || 0}</td>
+                  <td>${user.total_seats || 50}</td>
+                  <td>
+                    <button class="edit" data-id="${user._id}">Edit</button>
+                    <button class="delete" data-id="${user._id}">Delete</button>
+                    <button onclick="updateDriverSeats('${
+                      user._id
+                    }')">Update Seats</button>
+                  </td>
+                </tr>`;
+              driverTableBody.innerHTML += row;
+            }
+          });
+        } catch (error) {
+          console.error("Error loading users:", error);
+        }
+      }
+
+      async function loadDrivers() {
+        try {
+          const response = await fetch("http://localhost:5000/admin/users");
+          const data = await response.json();
+          const driverSelect = document.getElementById("driver-select");
+          driverSelect.innerHTML = '<option value="">Select Driver</option>';
+
+          data.users.forEach((user) => {
+            if (user.role === "driver") {
+              driverSelect.innerHTML += `
+                <option value="${user._id}">${user.username}</option>
+              `;
+            }
+          });
+        } catch (error) {
+          console.error("Error loading drivers:", error);
+        }
+      }
+
+      document
+        .getElementById("route-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const driverId = document.getElementById("driver-select").value;
+          const stops = document
+            .getElementById("stops")
+            .value.split("\n")
+            .filter((stop) => stop.trim());
+          const timings = document
+            .getElementById("timings")
+            .value.split("\n")
+            .filter((timing) => timing.trim());
+
+          // Get coordinates for each stop
+          const coordinates = [];
+          for (const stop of stops) {
+            const coords = await getCoordinates(stop);
+            if (coords) {
+              coordinates.push(coords);
+            }
+          }
+
+          try {
+            const response = await fetch(
+              `http://localhost:5000/routes/${driverId}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  stops,
+                  timings,
+                  coordinates,
+                }),
+              }
+            );
+
+            if (response.ok) {
+              alert("Route assigned successfully");
+              e.target.reset();
+            } else {
+              alert("Failed to assign route");
+            }
+          } catch (error) {
+            console.error("Error assigning route:", error);
+            alert("Error assigning route");
+          }
+        });
+
+      // Add function to update student fee status
+      async function updateFeeStatus(studentId, status) {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/students/${studentId}/fee`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                fee_status: status,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            alert("Fee status updated successfully");
+          } else {
+            alert("Failed to update fee status");
+            // Reset the select to previous value
+            loadUsers();
+          }
+        } catch (error) {
+          console.error("Error updating fee status:", error);
+          alert("Error updating fee status");
+          loadUsers();
+        }
+      }
+
+      // Add function to update driver seats
+      async function updateDriverSeats(driverId) {
+        const newSeats = prompt("Enter new available seats:");
+        if (newSeats === null || newSeats === "") return;
+
+        const seats = parseInt(newSeats);
+        if (isNaN(seats) || seats < 0 || seats > 50) {
+          alert("Please enter a valid number between 0 and 50");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:5000/drivers/${driverId}/seats`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                available_seats: seats,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            alert("Seats updated successfully");
+            loadUsers();
+          } else {
+            alert("Failed to update seats");
+          }
+        } catch (error) {
+          console.error("Error updating seats:", error);
+          alert("Error updating seats");
+        }
+      }
+
+      // Load users when page loads
+      loadUsers();
+      loadDrivers();
+    </script>
+  </body>
+</html>

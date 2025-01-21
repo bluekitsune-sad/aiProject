@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: white;
+        height: 100vh;
+      }
+
+      .navbar {
+        background: #075c94;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+      }
+
+      .navbar h1 {
+        font-size: 24px;
+      }
+
+      .navbar button {
+        background: #d63031;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .navbar button:hover {
+        background: #c0392b;
+      }
+
+      .content {
+        padding: 20px;
+        background: #d4d4d4;
+        margin: 20px auto;
+        width: 80%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .student-info {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .student-info h2 {
+        color: #333;
+      }
+
+      .student-info p {
+        font-size: 18px;
+        color: #555;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      .form-group button {
+        background: #075c94;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .form-group button:hover {
+        background: #058ae2;
+      }
+
+      .class-list {
+        margin-top: 20px;
+      }
+
+      .class-list h3 {
+        margin-bottom: 10px;
+        color: #333;
+      }
+
+      .class-list ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      .class-list ul li {
+        background: #f1f2f6;
+        padding: 10px;
+        margin-bottom: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>Student Dashboard</h1>
+      <button id="logout">Logout</button>
+    </div>
+
+    <div class="content">
+      <div class="student-info">
+        <h2 id="student-name">Student Name: John Doe</h2>
+        <p id="student-id">Student ID: 12345</p>
+      </div>
+
+      <form id="class-form">
+        <div class="form-group">
+          <label for="class-name">Class Name:</label>
+          <input
+            type="text"
+            id="class-name"
+            placeholder="Enter class name"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label for="class-timing">Class Timing:</label>
+          <input type="time" id="class-timing" required />
+        </div>
+        <div class="form-group">
+          <button type="submit">Add Class</button>
+        </div>
+      </form>
+
+      <div class="class-list">
+        <h3>Classes:</h3>
+        <ul id="class-list">
+          <!-- Dynamically added class entries will appear here -->
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      const classForm = document.getElementById("class-form");
+      const classList = document.getElementById("class-list");
+      const studentName = document.getElementById("student-name");
+      const studentId = document.getElementById("student-id");
+
+      const userId = localStorage.getItem("user_id");
+
+      async function loadClasses() {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/students/${userId}/classes`
+          );
+          const data = await response.json();
+
+          classList.innerHTML = "";
+          data.classes.forEach((classItem) => {
+            const listItem = document.createElement("li");
+            listItem.textContent = `${classItem.name} - ${classItem.timing}`;
+            classList.appendChild(listItem);
+          });
+        } catch (error) {
+          console.error("Error loading classes:", error);
+        }
+      }
+
+      loadClasses();
+
+      classForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const className = document.getElementById("class-name").value;
+        const classTiming = document.getElementById("class-timing").value;
+
+        try {
+          const response = await fetch(
+            `http://localhost:5000/students/${userId}/classes`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                className,
+                classTiming,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            loadClasses();
+            classForm.reset();
+          } else {
+            alert("Failed to add class");
+          }
+        } catch (error) {
+          console.error("Error adding class:", error);
+          alert("Error adding class");
+        }
+      });
+
+      // Handle logout
+      document.getElementById("logout").addEventListener("click", () => {
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("role");
+        window.location.href = "login.html";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Driver Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css"
+      integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js"
+      integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg=="
+      crossorigin=""
+    ></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: white;
+        height: 100vh;
+      }
+
+      .navbar {
+        background: #075c94;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+      }
+
+      .navbar h1 {
+        font-size: 24px;
+      }
+
+      .navbar button {
+        background: #d63031;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .navbar button:hover {
+        background: #c0392b;
+      }
+
+      .tabs {
+        display: flex;
+        justify-content: space-around;
+        background: #3072b4;
+        padding: 10px 0;
+        color: white;
+      }
+
+      .tabs button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 10px 15px;
+      }
+
+      .tabs button.active {
+        background: #075c94;
+        border-radius: 4px;
+      }
+
+      .tabs button:hover {
+        background: #058ae2;
+        border-radius: 4px;
+      }
+
+      .content {
+        padding: 20px;
+        background: #d4d4d4;
+        margin: 10px auto;
+        width: 80%;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      .table th,
+      .table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .table th {
+        background: #075c94;
+        color: white;
+      }
+      #MineMap {
+        height: 720px;
+        width: 1800px;
+        margin-left: 300px;
+      }
+
+      .seat-info {
+        background: #fff;
+        padding: 20px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      .seat-info p {
+        font-size: 18px;
+        margin: 10px 0;
+      }
+
+      #available-seats {
+        font-weight: bold;
+        color: #075c94;
+      }
+
+      #total-seats {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar">
+      <h1>Driver Dashboard</h1>
+      <button id="logout">Logout</button>
+    </div>
+
+    <div class="tabs">
+      <button class="active" id="stops-tab">Route Stops</button>
+      <button id="class-timings-tab">Timings</button>
+    </div>
+
+    <div id="stops-content" class="content">
+      <h2>Route Stops</h2>
+      <table class="table" id="stops-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Stop</th>
+            <th>Destination</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Stops will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <div id="class-timings-content" class="content" style="display: none">
+      <h2>Timings</h2>
+      <table class="table" id="timings-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Stop</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Timings will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <div id="seats-content" class="content">
+      <h2>Seat Management</h2>
+      <div class="seat-info">
+        <p>Total Seats: <span id="total-seats">50</span></p>
+        <p>Available Seats: <span id="available-seats">0</span></p>
+      </div>
+      <div class="form-group">
+        <label for="update-seats">Update Available Seats:</label>
+        <input type="number" id="update-seats" min="0" max="50" />
+        <button onclick="updateSeats()">Update</button>
+      </div>
+    </div>
+
+    <div id="MineMap"></div>
+
+    <script>
+      const stopsTab = document.getElementById("stops-tab");
+      const classTimingsTab = document.getElementById("class-timings-tab");
+      const stopsContent = document.getElementById("stops-content");
+      const classTimingsContent = document.getElementById(
+        "class-timings-content"
+      );
+      const stopsTableBody = document.querySelector("#stops-table tbody");
+      const timingsTableBody = document.querySelector("#timings-table tbody");
+
+      // Get user_id from localStorage
+      const driverId = localStorage.getItem("user_id");
+
+      // Fetch route stops and timings from backend
+      async function loadRouteData() {
+        try {
+          console.log("Driver ID:", driverId); // Check if we have the driver ID
+          const response = await fetch(
+            `http://localhost:5000/routes/${driverId}/stops`
+          );
+          const data = await response.json();
+          console.log("Route data received:", data); // Check the data we're getting
+
+          // Clear existing tables and markers
+          stopsTableBody.innerHTML = "";
+          timingsTableBody.innerHTML = "";
+          stopMarkers.forEach((marker) => mymap.removeLayer(marker));
+          stopMarkers = [];
+          if (routeLayer) {
+            mymap.removeLayer(routeLayer);
+          }
+
+          if (!data.stops || data.stops.length === 0) {
+            // Handle empty data
+            stopsTableBody.innerHTML = `
+              <tr>
+                <td colspan="3">No stops assigned yet</td>
+              </tr>`;
+            timingsTableBody.innerHTML = `
+              <tr>
+                <td colspan="3">No timings assigned yet</td>
+              </tr>`;
+            return;
+          }
+
+          // Example coordinates for stops (you'll need to add real coordinates to your backend)
+          const stopCoordinates = [
+            [24.982, 67.1341], // Example stop 1
+            [24.9756, 67.1258], // Example stop 2
+            [24.9912, 67.1199], // Example stop 3
+            [24.9867, 67.1375], // Example stop 4
+          ];
+
+          // Populate stops table and add markers
+          data.stops.forEach((stop, index) => {
+            // Add table row
+            const row = `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${stop}</td>
+                <td>IUGC</td>
+              </tr>`;
+            stopsTableBody.innerHTML += row;
+
+            // Add marker if coordinates exist
+            if (stopCoordinates[index]) {
+              const marker = L.marker(stopCoordinates[index], {
+                icon: stopIcon,
+              }).addTo(mymap);
+
+              marker.bindPopup(
+                `<b>${stop}</b><br>Time: ${data.timings[index]}`
+              );
+
+              // Add click event to show route
+              marker.on("click", () => {
+                showRouteToIUGC(stopCoordinates[index]);
+              });
+
+              stopMarkers.push(marker);
+            }
+          });
+
+          // Populate timings table
+          data.timings.forEach((timing, index) => {
+            const row = `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${data.stops[index]}</td>
+                <td>${timing}</td>
+              </tr>`;
+            timingsTableBody.innerHTML += row;
+          });
+
+          // Add seat information to the stops table
+          const seatInfo = `
+            <tr>
+              <td colspan="3" id="seats-status">Loading seat information...</td>
+            </tr>`;
+          stopsTableBody.innerHTML += seatInfo;
+
+          // Load seat data
+          await loadSeatData();
+        } catch (error) {
+          console.error("Error loading route data:", error);
+          // Show error messages...
+        }
+      }
+
+      // Function to show route from stop to IUGC
+      async function showRouteToIUGC(stopCoords) {
+        const iugcCoords = [24.987093072299484, 67.12955074952822];
+
+        try {
+          // Remove existing route if any
+          if (routeLayer) {
+            mymap.removeLayer(routeLayer);
+          }
+
+          // Using OSRM demo server for routing (you might want to use a different routing service)
+          const response = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${stopCoords[1]},${stopCoords[0]};${iugcCoords[1]},${iugcCoords[0]}?overview=full&geometries=geojson`
+          );
+          const data = await response.json();
+
+          if (data.routes && data.routes[0]) {
+            routeLayer = L.geoJSON(data.routes[0].geometry, {
+              color: "#075c94",
+              weight: 4,
+              opacity: 0.7,
+            }).addTo(mymap);
+
+            // Fit map to show the entire route
+            mymap.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+          }
+        } catch (error) {
+          console.error("Error showing route:", error);
+        }
+      }
+
+      // Load route data when page loads
+      loadRouteData();
+
+      // Tab switching logic
+      stopsTab.addEventListener("click", () => {
+        stopsTab.classList.add("active");
+        classTimingsTab.classList.remove("active");
+        stopsContent.style.display = "block";
+        classTimingsContent.style.display = "none";
+      });
+
+      classTimingsTab.addEventListener("click", () => {
+        classTimingsTab.classList.add("active");
+        stopsTab.classList.remove("active");
+        classTimingsContent.style.display = "block";
+        stopsContent.style.display = "none";
+      });
+
+      // Handle logout
+      document.getElementById("logout").addEventListener("click", () => {
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("role");
+        window.location.href = "login.html";
+      });
+
+      // Making a map and tiles
+      const mymap = L.map("MineMap").setView(
+        [24.987093072299484, 67.12955074952822],
+        14
+      );
+      // L is the leaflet library
+      const attribution =
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+      const tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+      const tiles = L.tileLayer(tileUrl, { attribution });
+      tiles.addTo(mymap);
+      // Making a marker with a custom icon
+      // IUGC marker
+      const IugcIcon = L.icon({
+        iconUrl: "iugc.png",
+        iconSize: [50, 32],
+        iconAnchor: [25, 16],
+      });
+      const iugcMarker = L.marker([24.987093072299484, 67.12955074952822], {
+        icon: IugcIcon,
+      }).addTo(mymap);
+
+      // Stop marker icon
+      const stopIcon = L.icon({
+        iconUrl:
+          "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+      });
+
+      let routeLayer = null; // To store the current route layer
+      let stopMarkers = []; // To store stop markers
+
+      async function loadSeatData() {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/drivers/${driverId}/seats`
+          );
+          const data = await response.json();
+
+          document.getElementById("available-seats").textContent =
+            data.available_seats;
+          document.getElementById("total-seats").textContent = data.total_seats;
+
+          // Update seat status in the stops table
+          const seatsStatus = document.getElementById("seats-status");
+          if (seatsStatus) {
+            seatsStatus.textContent = `${data.available_seats}/${data.total_seats} seats available`;
+          }
+        } catch (error) {
+          console.error("Error loading seat data:", error);
+        }
+      }
+
+      async function updateSeats() {
+        const newSeatCount = document.getElementById("update-seats").value;
+        const totalSeats = parseInt(
+          document.getElementById("total-seats").textContent
+        );
+
+        if (newSeatCount < 0 || newSeatCount > totalSeats) {
+          alert(`Please enter a valid number between 0 and ${totalSeats}`);
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:5000/drivers/${driverId}/seats`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                available_seats: parseInt(newSeatCount),
+              }),
+            }
+          );
+
+          if (response.ok) {
+            loadSeatData();
+            alert("Seats updated successfully");
+          } else {
+            alert("Failed to update seats");
+          }
+        } catch (error) {
+          console.error("Error updating seats:", error);
+          alert("Error updating seats");
+        }
+      }
+    </script>
+  </body>
+</html>

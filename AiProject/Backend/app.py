@@ -27,8 +27,6 @@ CORS(app)  # Enable CORS for all routes
 # }
 
 # mongodb_uri = "mongodb+srv://farjad19907:19907@cluster0.uaejnuk.mongodb.net/"
-mongodb_uri = "mongodb+srv://sad22639:saadmongo@sad.hdn6hgp.mongodb.net/?retryWrites=true&w=majority&appName=SAD"
-
 if mongodb_uri:
     client = MongoClient(mongodb_uri)
     db = client['bus']
